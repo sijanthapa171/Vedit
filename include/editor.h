@@ -1,10 +1,6 @@
 #ifndef EDITOR_H
 #define EDITOR_H
 
-#define _DEFAULT_SOURCE
-#define _BSD_SOURCE
-#define _GNU_SOURCE
-
 #include <stddef.h>
 #include <termios.h>
 #include <time.h>
