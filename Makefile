@@ -1,12 +1,13 @@
 CC = cc
 CFLAGS = -std=c11 -Wall -Wextra -pedantic -O2
 TARGET = notepad
-SRC = notepad.c
+SRC = src/main.c src/terminal.c src/buffer.c src/fileio.c src/screen.c src/input.c
+INCLUDES = -Iinclude
 
 all: $(TARGET)
 
 $(TARGET): $(SRC)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SRC)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(TARGET) $(SRC)
 
 clean:
 	rm -f $(TARGET)
