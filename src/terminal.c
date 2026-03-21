@@ -6,9 +6,16 @@
 
 #include "editor.h"
 
+static void writeOrDie(const char *s, size_t len) {
+  if (write(STDOUT_FILENO, s, len) == -1) {
+    perror("write");
+    exit(1);
+  }
+}
+
 void die(const char *s) {
-  write(STDOUT_FILENO, "\x1b[2J", 4);
-  write(STDOUT_FILENO, "\x1b[H", 3);
+  writeOrDie("\x1b[2J", 4);
+  writeOrDie("\x1b[H", 3);
   perror(s);
   exit(1);
 }
@@ -94,7 +101,8 @@ static int getCursorPosition(int *rows, int *cols) {
   char buf[32];
   unsigned int i = 0;
 
-  if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4) return -1;
+  ssize_t out = write(STDOUT_FILENO, "\x1b[6n", 4);
+  if (out != 4) return -1;
 
   while (i < sizeof(buf) - 1) {
     if (read(STDIN_FILENO, &buf[i], 1) != 1) break;
@@ -113,7 +121,8 @@ int getWindowSize(int *rows, int *cols) {
   struct winsize ws;
 
   if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
-    if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) return -1;
+    ssize_t out = write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12);
+    if (out != 12) return -1;
     return getCursorPosition(rows, cols);
   }
 

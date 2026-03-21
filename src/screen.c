@@ -125,6 +125,9 @@ void editorRefreshScreen(void) {
 
   abAppend(&ab, "\x1b[?25h", 6);
 
-  write(STDOUT_FILENO, ab.b, (size_t)ab.len);
+  ssize_t out = write(STDOUT_FILENO, ab.b, (size_t)ab.len);
+  if (out == -1) {
+    die("write");
+  }
   abFree(&ab);
 }
