@@ -42,8 +42,56 @@ void editorMoveCursor(int key) {
 void editorProcessKeypress(void) {
   static int quit_times = 3;
   static int pending_d = 0; // Normal-mode: first 'd' waits for second 'd'
+  static int ex_active = 0;
+  static char ex_buf[64];
+  static int ex_len = 0;
 
   int c = editorReadKey();
+
+  if (ex_active) {
+    if (c == '\x1b') {
+      ex_active = 0;
+      ex_len = 0;
+      ex_buf[0] = '\0';
+      E.mode = MODE_NORMAL;
+      editorSetStatusMessage("-- NORMAL --");
+      quit_times = 3;
+      return;
+    }
+
+    if (c == '\r') {
+      ex_active = 0;
+      ex_buf[ex_len] = '\0';
+      editorExecuteExCommand(ex_buf);
+      ex_len = 0;
+      ex_buf[0] = '\0';
+      E.mode = MODE_NORMAL;
+      editorSetStatusMessage("-- NORMAL --");
+      quit_times = 3;
+      return;
+    }
+
+    switch (c) {
+      case CTRL_KEY('h'):
+      case 127:
+        if (ex_len > 0) {
+          ex_len--;
+          ex_buf[ex_len] = '\0';
+          editorSetStatusMessage(":%s", ex_buf);
+        }
+        break;
+      default:
+        if (isprint(c) && ex_len < (int)sizeof(ex_buf) - 1) {
+          ex_buf[ex_len++] = (char)c;
+          ex_buf[ex_len] = '\0';
+          editorSetStatusMessage(":%s", ex_buf);
+        }
+        break;
+    }
+
+    quit_times = 3;
+    return;
+  }
 
   if (E.mode == MODE_NORMAL && pending_d && c != 'd') {
     pending_d = 0;
@@ -108,6 +156,13 @@ void editorProcessKeypress(void) {
 
     case MODE_NORMAL: {
       switch (c) {
+        case ':':
+          ex_active = 1;
+          ex_len = 0;
+          ex_buf[0] = '\0';
+          pending_d = 0;
+          editorSetStatusMessage(":");
+          break;
         case 'i':
           E.mode = MODE_INSERT;
           editorSetStatusMessage("-- INSERT --");
@@ -212,6 +267,14 @@ void editorProcessKeypress(void) {
 
     case MODE_VISUAL: {
       switch (c) {
+        case ':':
+          E.mode = MODE_NORMAL;
+          ex_active = 1;
+          ex_len = 0;
+          ex_buf[0] = '\0';
+          pending_d = 0;
+          editorSetStatusMessage(":");
+          break;
         case 'd':
           pending_d = 0;
           editorDelSelection();

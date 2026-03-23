@@ -1,10 +1,6 @@
 #ifndef EDITOR_H
 #define EDITOR_H
 
-#define _DEFAULT_SOURCE
-#define _BSD_SOURCE
-#define _GNU_SOURCE
-
 #include <stddef.h>
 #include <termios.h>
 #include <time.h>
@@ -98,5 +94,8 @@ void initEditor(void);
 
 /* Deletes the currently selected Visual range and moves cursor to start. */
 void editorDelSelection(void);
+
+/* Executes an Ex-style command (from `:`). Returns 1 if handled. */
+int editorExecuteExCommand(const char *cmd);
 
 #endif
