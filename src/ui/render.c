@@ -5,6 +5,37 @@
 #include "editor.h"
 #include "ui.h"
 
+static const char *help_text[] = {
+    "Vedit Help",
+    "----------",
+    "",
+    "NORMAL MODE:",
+    "  h, j, k, l / Arrows  : Move cursor (Left, Down, Up, Right)",
+    "  i                    : Enter Insert Mode",
+    "  :                    : Enter Command Mode",
+    "  PageUp / PageDown    : Scroll Page",
+    "  Home / End           : Go to beginning / end of line",
+    "  Ctrl-Q               : Quit editor",
+    "",
+    "INSERT MODE:",
+    "  Esc                  : Exit Insert Mode (Return to Normal Mode)",
+    "  Backspace / Del      : Delete character",
+    "  Enter                : Insert newline",
+    "",
+    "COMMAND MODE:",
+    "  :w                   : Save file",
+    "  :w <file>            : Save as <file>",
+    "  :q                   : Quit (fails if unsaved changes exist)",
+    "  :q!                  : Quit and discard changes",
+    "  :wq                  : Save and quit",
+    "  :help                : Open this help screen",
+    "",
+    "HELP MODE:",
+    "  j, k / Up, Down      : Scroll Help text",
+    "  q, Esc, Enter        : Close Help screen",
+    NULL
+};
+
 void editorScroll(void) {
     E.rx = 0;
     if (E.cy < E.numrows) {
@@ -31,6 +62,29 @@ void editorScroll(void) {
 }
 
 void editorDrawRows(struct abuf *ab) {
+    if (E.mode == MODE_HELP) {
+        int y;
+        int help_lines = 0;
+        while (help_text[help_lines] != NULL) help_lines++;
+        
+        if (E.help_rowoff >= help_lines) E.help_rowoff = help_lines - 1;
+        if (E.help_rowoff < 0) E.help_rowoff = 0;
+        
+        for (y = 0; y < E.screenrows; y++) {
+            int filerow = y + E.help_rowoff;
+            if (filerow >= help_lines) {
+                abAppend(ab, "~", 1);
+            } else {
+                int len = strlen(help_text[filerow]);
+                if (len > E.screencols) len = E.screencols;
+                abAppend(ab, help_text[filerow], len);
+            }
+            abAppend(ab, "\x1b[K", 3);
+            abAppend(ab, "\r\n", 2);
+        }
+        return;
+    }
+
     int y;
     for (y = 0; y < E.screenrows; y++) {
         int filerow = y + E.rowoff;
@@ -70,6 +124,7 @@ void editorDrawStatusBar(struct abuf *ab) {
     const char *modestr = "NORMAL";
     if (E.mode == MODE_INSERT) modestr = "INSERT";
     else if (E.mode == MODE_COMMAND) modestr = "COMMAND";
+    else if (E.mode == MODE_HELP) modestr = "HELP";
     
     int rlen = snprintf(rstatus, sizeof(rstatus), "[%s] %d/%d", modestr, E.cy + 1, E.numrows);
     if (len > E.screencols) len = E.screencols;
@@ -110,7 +165,11 @@ void editorRefreshScreen(void) {
     editorDrawMessageBar(&ab);
     
     char buf[32];
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, (E.rx - E.coloff) + 1);
+    if (E.mode == MODE_HELP) {
+        snprintf(buf, sizeof(buf), "\x1b[%d;%dH", 1, 1);
+    } else {
+        snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, (E.rx - E.coloff) + 1);
+    }
     abAppend(&ab, buf, strlen(buf));
     
     abAppend(&ab, "\x1b[?25h", 6);

@@ -9,5 +9,7 @@ void editorProcessKeypress(void) {
         normalModeProcessKey(c);
     } else if (E.mode == MODE_INSERT) {
         insertModeProcessKey(c);
+    } else if (E.mode == MODE_HELP) {
+        helpModeProcessKey(c);
     }
 }

@@ -79,6 +79,11 @@ void commandModeProcess(void) {
         if (write(STDOUT_FILENO, "\x1b[2J", 4) == -1) {}
         if (write(STDOUT_FILENO, "\x1b[H", 3) == -1) {}
         exit(0);
+    } else if (strcmp(query, "help") == 0) {
+        E.help_rowoff = 0;
+        E.mode = MODE_HELP;
+        free(query);
+        return;
     } else {
         editorSetStatusMessage("Not an editor command: %s", query);
     }

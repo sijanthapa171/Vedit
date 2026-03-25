@@ -22,5 +22,6 @@ void editorMoveCursor(int key);
 
 void normalModeProcessKey(int c);
 void insertModeProcessKey(int c);
+void helpModeProcessKey(int c);
 
 #endif

@@ -11,7 +11,8 @@
 enum EditorMode {
     MODE_NORMAL,
     MODE_INSERT,
-    MODE_COMMAND
+    MODE_COMMAND,
+    MODE_HELP
 };
 
 typedef struct erow {
@@ -26,6 +27,7 @@ struct editorConfig {
     int rx;
     int rowoff;
     int coloff;
+    int help_rowoff;
     int screenrows;
     int screencols;
     int numrows;
