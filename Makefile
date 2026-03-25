@@ -1,17 +1,33 @@
-CC = cc
-CFLAGS = -D_GNU_SOURCE -std=c11 -Wall -Wextra -pedantic -O2
-TARGET = st
-SRC = src/app/main.c src/terminal/terminal.c \
-      src/buffer/rows.c src/buffer/edit.c src/buffer/serialize.c src/buffer/selection.c \
-      src/file/fileio.c src/screen/screen.c src/input/input.c src/ex/commands.c
-INCLUDES = -Iinclude
+CC = gcc
+CFLAGS = -Wall -Wextra -pedantic -std=c99 -g
+LDFLAGS =
+
+SRC_DIR = src core ui input commands utils
+INC_DIR = include
+BUILD_DIR = build
+BIN_DIR = bin
+
+TARGET = $(BIN_DIR)/vedit
+
+SRCS = $(foreach dir, $(SRC_DIR), $(wildcard $(dir)/*.c))
+OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
+
+INC_FLAGS = -I$(INC_DIR)
 
 all: $(TARGET)
 
-$(TARGET): $(SRC)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(TARGET) $(SRC)
+$(TARGET): $(OBJS)
+	@mkdir -p $(BIN_DIR)
+	$(CC) $(CFLAGS) $(OBJS) -o $@ $(LDFLAGS)
+
+$(BUILD_DIR)/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(INC_FLAGS) -c $< -o $@
+
+debug: CFLAGS += -O0
+debug: clean all
 
 clean:
-	rm -f $(TARGET)
+	rm -rf $(BUILD_DIR) $(BIN_DIR)
 
-.PHONY: all clean
+.PHONY: all clean debug

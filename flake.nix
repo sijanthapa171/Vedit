@@ -1,57 +1,36 @@
 {
-  description = "Terminal notepad in C (flake dev shell + package)";
+  description = "Vedit - A Vim-like C Text Editor";
 
-  inputs.nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  };
 
-  outputs =
-    { self, nixpkgs }:
+  outputs = { self, nixpkgs }:
     let
-      supportedSystems = [
-        "x86_64-linux"
-        "aarch64-linux"
-        "x86_64-darwin"
-        "aarch64-darwin"
-      ];
-      forEachSupportedSystem =
-        f: nixpkgs.lib.genAttrs supportedSystems (system: f (import nixpkgs { inherit system; }));
+      supportedSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
+      forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
+      pkgsFor = system: import nixpkgs { inherit system; };
     in
     {
-      packages = forEachSupportedSystem (pkgs: {
-        default = pkgs.stdenv.mkDerivation {
-          pname = "notepad";
-          version = "0.1.0";
-          src = ./.;
+      devShells = forAllSystems (system:
+        let
+          pkgs = pkgsFor system;
+        in
+        {
+          default = pkgs.mkShell {
+            buildInputs = with pkgs; [
+              gcc
+              gdb
+              gnumake
+              pkg-config
+            ];
 
-          nativeBuildInputs = with pkgs; [ gnumake ];
-
-          buildPhase = ''
-            make
-          '';
-
-          installPhase = ''
-            mkdir -p $out/bin
-            cp notepad $out/bin/notepad
-          '';
-        };
-      });
-
-      apps = forEachSupportedSystem (pkgs: {
-        default = {
-          type = "app";
-          program = "${self.packages.${pkgs.system}.default}/bin/notepad";
-        };
-      });
-
-      devShells = forEachSupportedSystem (pkgs: {
-        default = pkgs.mkShell {
-          packages = with pkgs; [
-            gcc
-            gnumake
-            clang-tools
-            cppcheck
-            valgrind
-          ] ++ (if pkgs.stdenv.isDarwin then [ ] else [ gdb ]);
-        };
-      });
+            shellHook = ''
+              echo "Vedit Development Environment Loaded"
+              echo "Available tools: gcc, gdb, make, pkg-config"
+            '';
+          };
+        }
+      );
     };
 }

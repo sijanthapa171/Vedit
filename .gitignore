@@ -1,3 +1,11 @@
-st
-main.c
-hello.txt
+build/
+bin/
+*.o
+
+vedit
+
+*.swp
+*~
+
+.direnv/
+result
