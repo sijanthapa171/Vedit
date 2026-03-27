@@ -13,6 +13,27 @@
 #include "editor.h"
 #include "core.h"
 
+typedef struct {
+    char *name;
+    int is_dir;
+} DirEntry;
+
+int compareDirEntries(const void *a, const void *b) {
+    DirEntry *entryA = (DirEntry *)a;
+    DirEntry *entryB = (DirEntry *)b;
+
+    if (strcmp(entryA->name, "..") == 0) return -1;
+    if (strcmp(entryB->name, "..") == 0) return 1;
+
+    if (strcmp(entryA->name, ".") == 0) return -1;
+    if (strcmp(entryB->name, ".") == 0) return 1;
+
+    if (entryA->is_dir && !entryB->is_dir) return -1;
+    if (!entryA->is_dir && entryB->is_dir) return 1;
+
+    return strcasecmp(entryA->name, entryB->name);
+}
+
 char *editorRowsToString(int *buflen) {
     int totlen = 0;
     int j;
@@ -47,18 +68,18 @@ void editorOpen(char *filename) {
             return;
         }
         
-        char header[256];
-        snprintf(header, sizeof(header), "Directory: %s", filename);
-        editorInsertRow(E.numrows, header, strlen(header));
-        editorInsertRow(E.numrows, "----------", 10);
+        DirEntry *entries = NULL;
+        int count = 0;
+        int capacity = 0;
         
         struct dirent *dir;
         while ((dir = readdir(d)) != NULL) {
-            if (strcmp(dir->d_name, ".") == 0) continue;
+            if (count >= capacity) {
+                capacity = capacity == 0 ? 10 : capacity * 2;
+                entries = realloc(entries, capacity * sizeof(DirEntry));
+            }
             
-            char entry[512];
             int is_dir = (dir->d_type == DT_DIR);
-            
             if (dir->d_type == DT_UNKNOWN) {
                 char full_path[1024];
                 snprintf(full_path, sizeof(full_path), "%s/%s", filename, dir->d_name);
@@ -68,16 +89,28 @@ void editorOpen(char *filename) {
                 }
             }
             
-            if (is_dir) {
-                snprintf(entry, sizeof(entry), "  %s/", dir->d_name);
-            } else {
-                snprintf(entry, sizeof(entry), "  %s", dir->d_name);
-            }
-            editorInsertRow(E.numrows, entry, strlen(entry));
+            entries[count].name = strdup(dir->d_name);
+            entries[count].is_dir = is_dir;
+            count++;
         }
         closedir(d);
+        
+        qsort(entries, count, sizeof(DirEntry), compareDirEntries);
+        
+        for (int i = 0; i < count; i++) {
+            char line[512];
+            if (entries[i].is_dir) {
+                snprintf(line, sizeof(line), "%s/", entries[i].name);
+            } else {
+                snprintf(line, sizeof(line), "%s", entries[i].name);
+            }
+            editorInsertRow(E.numrows, line, strlen(line));
+            free(entries[i].name);
+        }
+        free(entries);
+        
         E.dirty = 0;
-        editorSetStatusMessage("Opened directory: %s (%d items)", filename, E.numrows - 2);
+        editorSetStatusMessage("Opened directory: %s (%d items)", filename, count);
         return;
     }
     
