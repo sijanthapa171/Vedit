@@ -1,40 +1,56 @@
-# Vedit - A Vim-like C Terminal Text Editor
+# Vedit - A Modular Vim-like C Terminal Text Editor
 
-Vedit is a lightweight, terminal-based text editor written entirely in C. It implements modal editing with a UI inspired by Vim.
+Vedit is a lightweight, terminal-based text editor written entirely in C. It features a modular architecture, modal editing, and directory navigation, all powered by VT100 escape sequences without any external UI libraries.
 
-## Features
+## New Features
 
-- **Modal Editing**:
-  - `NORMAL` mode: Navigation and command entry.
-  - `INSERT` mode: Text entry and editing.
-  - `COMMAND` mode: File saving and quitting.
-- **Vim-like Keybindings**: Use `h`, `j`, `k`, `l` to move, `i` to enter insert mode, and `:` to enter command mode.
-- **Commands**:
-  - `:w` - Save to the current file.
-  - `:w <filename>` - Save as a new file.
-  - `:q` - Quit the editor.
-  - `:wq` - Save and quit.
-  - `:q!` - Force quit without saving.
-- **No external UI libraries**: Everything is drawn using VT100 escape sequences.
-- **Portability**: Uses standard C99 and POSIX terminal standards.
+- **Interactive Directory Exploration**:
+    - Open any directory with `vedit <path>` (e.g., `vedit .`).
+    - Navigate folders and open files directly using **Enter**.
+    - Supports parent directory (`..`) navigation.
+- **Improved Buffer Management**:
+    - **Multi-Step Undo**: Press `u` in Normal Mode to revert up to **50 previous changes**.
+    - **Line Numbers**: Highlighting the current line for better focus.
+    - **Modular Codebase**: Split into logical components (rows, editing, undo, explorer, etc.) for easier maintenance.
+- **Enhanced Editing**:
+    - `x`: Delete character under the cursor.
+    - `dd`: Delete current line.
+    - Full support for `Home`, `End`, `PageUp`, and `PageDown`.
+- **Global Installation**:
+    - **Nix Support**: Install globally using `nix profile install .`.
+    - **Manual Option**: Use `bash install.sh` to install to `/usr/local/bin`.
 
-## Development Environment Setup
+## Modal Editing
 
-This project provides a reproducible development environment via Nix.
+- `NORMAL`: Navigation (`h, j, k, l`), undo (`u`), and character deletion (`x`).
+- `INSERT`: Standard text entry (`i` to enter).
+- `COMMAND`: File operations and help (`:` to enter).
+- `HELP`: Interactive help screen (`:help`).
 
-1. Enable flakes in your Nix installation.
-2. Run `nix develop` in the project root to launch the development shell. This environment includes `gcc`, `gdb`, `make`, and `pkg-config`.
+## Setup and Installation
 
-## Build and Run
+### Recommended (NixOS/Nix)
 
-Inside the shell, run the following to compile the project:
 ```bash
-make
+nix profile install .
 ```
 
-To run the editor:
+### Manual Installation
+
 ```bash
-./bin/vedit [optional_filename]
+bash install.sh
 ```
 
-# TOOD:
+### Local Development
+
+1. Run `nix develop` for a complete dev shell.
+2. Build with `make`.
+3. Run with `./bin/vedit [filename_or_directory]`.
+
+## Commands
+
+- `:w` - Save changes.
+- `:q` - Quit (fails if unsaved changes exist).
+- `:wq` - Save and quit.
+- `:q!` - Force quit.
+- `:help` - Open interactive help.
