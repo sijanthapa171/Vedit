@@ -54,22 +54,25 @@ vedit/
 ├── src/
 │   ├── main.c              # Actual main() implementation
 │   ├── core/
-│   │   ├── buffer.c        # Row-level buffer operations
+│   │   ├── rows.c          # Low-level row management
+│   │   ├── edit.c          # Buffer editing operations
+│   │   ├── undo.c          # Multi-step undo stack logic
 │   │   └── state.c         # Editor state initialisation
 │   ├── input/
 │   │   ├── keyboard.c      # editorReadKey() — raw key reading
 │   │   ├── modes.c         # editorProcessKeypress() — mode dispatch
-│   │   ├── normal.c        # normalModeProcessKey() + editorMoveCursor()
+│   │   ├── normal.c        # normalModeProcessKey() + cursor movement
 │   │   ├── insert.c        # insertModeProcessKey()
 │   │   └── help.c          # helpModeProcessKey()
 │   ├── ui/
-│   │   ├── render.c        # Screen drawing, scroll, status/message bars
+│   │   ├── render.c        # Screen drawing, status/message bars, line numbers
 │   │   └── terminal.c      # enableRawMode / disableRawMode / getWindowSize
 │   ├── commands/
 │   │   └── prompt.c        # editorPrompt() + commandModeProcess()
 │   └── utils/
-│       ├── file.c          # editorOpen() / editorSave() / editorRowsToString()
-│       ├── utils.c         # abAppend() / abFree()
+│       ├── file_io.c       # editorOpen() / editorSave() / rows-to-string
+│       ├── explorer.c      # Directory selection and navigation
+│       ├── utils.c         # generic utilities (e.g. abuf)
 │       └── error.c         # die()
 └── bin/
     └── vedit               # Compiled binary (after make)
@@ -95,7 +98,9 @@ graph TD
     end
 
     subgraph Core Layer
-        buffer["buffer.c\nRow buffer ops"]
+        rows["rows.c\nRow management"]
+        edit["edit.c\nEditing logic"]
+        undo["undo.c\nUndo stack"]
         state["state.c\ninitEditor()"]
     end
 
@@ -109,7 +114,8 @@ graph TD
     end
 
     subgraph Utils Layer
-        file["file.c\neditorOpen()/Save()"]
+        file_io["file_io.c\nOpen/Save"]
+        explorer["explorer.c\nDir Explorer"]
         utils["utils.c\nabAppend()/abFree()"]
         error["error.c\ndie()"]
     end
@@ -118,13 +124,18 @@ graph TD
     modes --> normal
     modes --> insert
     modes --> help
-    normal --> buffer
+    normal --> edit
+    normal --> undo
     normal --> prompt
-    insert --> buffer
-    prompt --> file
+    normal --> explorer
+    insert --> edit
+    prompt --> file_io
     render --> utils
     render --> editor_h
-    buffer --> editor_h
+    edit --> rows
+    edit --> undo
+    rows --> undo
+    rows --> editor_h
     state --> editor_h
     terminal --> editor_h
 ```
@@ -145,16 +156,15 @@ classDiagram
         MODE_HELP
     }
 
-    class erow {
-        +int size
-        +int rsize
-        +char* chars
-        +char* render
+    class UndoStep {
+        +erow* row
+        +int numrows
+        +int cx, cy
+        +int dirty
     }
 
     class editorConfig {
-        +int cx
-        +int cy
+        +int cx, cy
         +int rx
         +int rowoff
         +int coloff
@@ -172,6 +182,9 @@ classDiagram
         +int quit_times
         +int command_count
         +int pending_key
+        +UndoStep undo_stack[50]
+        +int undo_stack_size
+        +int ln_width
     }
 
     class abuf {
@@ -182,6 +195,7 @@ classDiagram
     }
 
     editorConfig --> erow : "row[]"
+    editorConfig --> UndoStep : "undo_stack[50]"
     editorConfig --> EditorMode : mode
 ```
 
@@ -391,16 +405,19 @@ graph LR
 
 | Function | File | Description |
 |---|---|---|
-| `editorUpdateRow(row)` | `buffer.c` | Rebuilds `row->render` expanding `\t` to spaces (tab stop = 8) |
-| `editorInsertRow(at, s, len)` | `buffer.c` | Inserts a new row at position `at` in the global row array |
-| `editorFreeRow(row)` | `buffer.c` | Frees `chars` and `render` of a row |
-| `editorDelRow(at)` | `buffer.c` | Removes row at `at`, memmoves remaining rows up |
-| `editorRowInsertChar(row, at, c)` | `buffer.c` | Inserts char at column `at` within a row |
-| `editorRowAppendString(row, s, len)` | `buffer.c` | Appends a string to the end of a row (used when merging lines) |
-| `editorRowDelChar(row, at)` | `buffer.c` | Deletes char at column `at` within a row |
-| `editorInsertChar(c)` | `buffer.c` | High-level: insert char at cursor position |
-| `editorInsertNewline()` | `buffer.c` | Splits current row at cursor or inserts blank row |
-| `editorDelChar()` | `buffer.c` | High-level: delete char before cursor, merge lines if at col 0 |
+| `editorUpdateRow(row)` | `rows.c` | Rebuilds `row->render` expanding `\t` to spaces (tab stop = 8) |
+| `editorInsertRow(at, s, len)` | `rows.c` | Inserts a new row at position `at`, saves undo state |
+| `editorFreeRow(row)` | `rows.c` | Frees `chars` and `render` of a row |
+| `editorDelRow(at)` | `rows.c` | Removes row at `at`, saves undo state |
+| `editorClearBuffer()` | `rows.c` | Frees all rows and resets buffer state |
+| `editorRowInsertChar(row, at, c)` | `edit.c` | Inserts char at column `at` within a row |
+| `editorRowAppendString(row, s, len)` | `edit.c` | Appends a string to the end of a row |
+| `editorRowDelChar(row, at)` | `edit.c` | Deletes char at column `at` within a row |
+| `editorInsertChar(c)` | `edit.c` | High-level: insert char at cursor position |
+| `editorInsertNewline()` | `edit.c` | Splits current row or inserts blank row |
+| `editorDelChar()` | `edit.c` | High-level: delete char or merge lines |
+| `editorSaveUndoState()` | `undo.c` | Pushes a snapshot of the current buffer to the 50-step stack |
+| `editorUndo()` | `undo.c` | Pops and restores the last buffer snapshot from the stack |
 
 ---
 
@@ -420,23 +437,24 @@ flowchart TD
     flush --> free_abuf[abFree]
 ```
 
-### Scroll Calculation (`editorScroll`)
+### Scroll & Layout Calculation (`editorScroll`)
 
 ```mermaid
 flowchart LR
-    A[Compute rx\nfrom cx + tab stops] --> B{cy < rowoff?}
-    B -- Yes --> C[rowoff = cy]
-    B -- No --> D{cy >= rowoff + screenrows?}
-    D -- Yes --> E[rowoff = cy - screenrows + 1]
-    D -- No --> F{rx < coloff?}
-    E --> F
-    F -- Yes --> G[coloff = rx]
-    F -- No --> H{rx >= coloff + screencols?}
-    H -- Yes --> I[coloff = rx - screencols + 1]
-    H -- No --> J([Done])
-    G --> J
-    I --> J
-    C --> J
+    A[Compute rx\nfrom cx + tab stops] --> B[Calculate ln_width\nfrom total lines]
+    B --> C{cy < rowoff?}
+    C -- Yes --> D[rowoff = cy]
+    C -- No --> E{cy >= rowoff + screenrows?}
+    E -- Yes --> F[rowoff = cy - screenrows + 1]
+    E -- No --> G{rx < coloff?}
+    F --> G
+    G -- Yes --> H[coloff = rx]
+    G -- No --> I{rx >= coloff + (screencols - ln_width)?}
+    I -- Yes --> J[coloff = rx - (screencols - ln_width) + 1]
+    I -- No --> K([Done])
+    H --> K
+    J --> K
+    D --> K
 ```
 
 ### Status Bar Layout
@@ -457,18 +475,18 @@ flowchart LR
 ```mermaid
 sequenceDiagram
     participant main
-    participant file as file.c
-    participant buffer as buffer.c
+    participant file_io as file_io.c
+    participant rows as rows.c
 
-    main->>file: editorOpen(filename)
-    file->>file: fopen(filename, "r")
+    main->>file_io: editorOpen(filename)
+    file_io->>file_io: fopen(filename, "r")
     loop For each line in file
-        file->>file: getline(&line, &linecap, fp)
-        file->>file: strip trailing \\r\\n
-        file->>buffer: editorInsertRow(E.numrows, line, len)
+        file_io->>file_io: getline(&line, &linecap, fp)
+        file_io->>file_io: strip trailing \\r\\n
+        file_io->>rows: editorInsertRow(E.numrows, line, len)
     end
-    file->>file: fclose(fp)
-    file->>file: E.dirty = 0
+    file_io->>file_io: fclose(fp)
+    file_io->>file_io: E.dirty = 0
 ```
 
 ### Save
@@ -476,17 +494,16 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant prompt as prompt.c
-    participant file as file.c
-    participant buffer as buffer.c
+    participant file_io as file_io.c
+    participant rows as rows.c
 
-    prompt->>file: editorSave()
-    file->>buffer: editorRowsToString(&buflen)
-    buffer-->>file: single string with \\n joiners
-    file->>file: open(filename, O_RDWR|O_CREAT|O_TRUNC, 0644)
-    file->>file: write(fd, buf, buflen)
-    file->>file: close(fd)
-    file->>file: E.dirty = 0
-    file->>file: editorSetStatusMessage("N bytes written")
+    prompt->>file_io: editorSave()
+    file_io->>file_io: editorRowsToString(&buflen)
+    file_io->>file_io: open(filename, O_RDWR|O_CREAT|O_TRUNC, 0644)
+    file_io->>file_io: write(fd, buf, buflen)
+    file_io->>file_io: close(fd)
+    file_io->>file_io: E.dirty = 0
+    file_io->>file_io: editorSetStatusMessage("N bytes written")
 ```
 
 ---
@@ -524,8 +541,6 @@ SRCS    = $(foreach dir, $(SRC_DIR), $(wildcard $(dir)/*.c))
 OBJS    = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
 ```
 
-All `.c` files across every `SRC_DIR` subdirectory are automatically compiled; no manual source list needed.
-
 ---
 
 ## Key Bindings Summary
@@ -544,8 +559,11 @@ All `.c` files across every `SRC_DIR` subdirectory are automatically compiled; n
 | `PageDown` | Scroll down one screen |
 | `[n]j` | Move `n` lines down (numeric prefix) |
 | `dd` | Delete current line |
+| `x` | Delete character under cursor |
+| `u` | Undo last change (up to 50 steps) |
 | `i` | Enter Insert mode |
 | `:` | Enter Command mode |
+| `Enter` | (Explorer) Open selected file or folder |
 | `Ctrl-Q` | Quit (with unsaved-changes check) |
 
 ### Insert Mode
@@ -567,11 +585,3 @@ All `.c` files across every `SRC_DIR` subdirectory are automatically compiled; n
 | `:q!` | Force quit |
 | `:wq` | Save and quit |
 | `:help` | Open Help screen |
-
-### Help Mode
-
-| Key | Action |
-|---|---|
-| `j / ↓` | Scroll help down |
-| `k / ↑` | Scroll help up |
-| `q / Esc / Enter` | Close help, return to Normal |
