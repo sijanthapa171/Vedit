@@ -24,6 +24,8 @@ void initEditor(void) {
     E.quit_times = KILO_QUIT_TIMES;
     
     E.undo_stack_size = 0;
+    E.sel_sx = -1;
+    E.sel_sy = -1;
     
     if (getWindowSize(&E.screenrows, &E.screencols) == -1) {
         die("getWindowSize");

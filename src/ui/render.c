@@ -132,7 +132,37 @@ void editorDrawRows(struct abuf *ab) {
             int len = E.row[filerow].rsize - E.coloff;
             if (len < 0) len = 0;
             if (len > E.screencols - E.ln_width) len = E.screencols - E.ln_width;
-            if (len > 0) abAppend(ab, &E.row[filerow].render[E.coloff], len);
+            
+            if (E.mode == MODE_VISUAL) {
+                int sy = E.sel_sy, ey = E.cy;
+                int sx = E.sel_sx, ex = E.cx;
+                if (sy > ey || (sy == ey && sx > ex)) {
+                    int ty = sy; sy = ey; ey = ty;
+                    int tx = sx; sx = ex; ex = tx;
+                }
+
+                for (int i = 0; i < len; i++) {
+                    int cur_rx = E.coloff + i;
+                    int is_sel = 0;
+                    if (filerow > sy && filerow < ey) is_sel = 1;
+                    else if (sy == ey && filerow == sy) {
+                        if (filerow == sy) {
+                            int cur_cx = 0;
+                            if (cur_rx >= sx && cur_rx <= ex) is_sel = 1;
+                        }
+                    } else if (filerow == sy) {
+                        if (cur_rx >= sx) is_sel = 1;
+                    } else if (filerow == ey) {
+                        if (cur_rx <= ex) is_sel = 1;
+                    }
+
+                    if (is_sel) abAppend(ab, "\x1b[7m", 4);
+                    abAppend(ab, &E.row[filerow].render[cur_rx], 1);
+                    if (is_sel) abAppend(ab, "\x1b[m", 3);
+                }
+            } else {
+                if (len > 0) abAppend(ab, &E.row[filerow].render[E.coloff], len);
+            }
         }
         
         abAppend(ab, "\x1b[K", 3);

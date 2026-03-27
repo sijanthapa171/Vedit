@@ -12,7 +12,8 @@ enum EditorMode {
     MODE_NORMAL,
     MODE_INSERT,
     MODE_COMMAND,
-    MODE_HELP
+    MODE_HELP,
+    MODE_VISUAL
 };
 
 typedef struct erow {
@@ -51,8 +52,9 @@ struct editorConfig {
     
     UndoStep undo_stack[50];
     int undo_stack_size;
-    
     int ln_width;
+
+    int sel_sx, sel_sy;
 };
 
 extern struct editorConfig E;

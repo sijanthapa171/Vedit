@@ -11,5 +11,7 @@ void editorProcessKeypress(void) {
         insertModeProcessKey(c);
     } else if (E.mode == MODE_HELP) {
         helpModeProcessKey(c);
+    } else if (E.mode == MODE_VISUAL) {
+        visualModeProcessKey(c);
     }
 }

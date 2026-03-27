@@ -65,6 +65,14 @@ void normalModeProcessKey(int c) {
             commandModeProcess();
             break;
             
+        case 'v':
+            E.command_count = 0;
+            E.mode = MODE_VISUAL;
+            E.sel_sx = E.cx;
+            E.sel_sy = E.cy;
+            editorSetStatusMessage("-- VISUAL --");
+            break;
+            
         case '\r':
             E.command_count = 0;
             editorSelectEntry();
