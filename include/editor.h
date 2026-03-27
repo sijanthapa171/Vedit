@@ -49,11 +49,9 @@ struct editorConfig {
     int command_count;
     int pending_key;
     
-    /* Undo stack */
     UndoStep undo_stack[50];
     int undo_stack_size;
     
-    /* Line numbers */
     int ln_width;
 };
 

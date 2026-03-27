@@ -9,3 +9,4 @@ vedit
 
 .direnv/
 result
+main.c
