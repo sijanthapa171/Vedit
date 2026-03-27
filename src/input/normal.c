@@ -4,6 +4,7 @@
 #include "input.h"
 #include "commands.h"
 #include "core.h"
+#include "utils.h"
 
 void editorMoveCursor(int key) {
     erow *row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy];
@@ -56,6 +57,11 @@ void normalModeProcessKey(int c) {
             E.command_count = 0;
             E.mode = MODE_COMMAND;
             commandModeProcess();
+            break;
+            
+        case '\r':
+            E.command_count = 0;
+            editorSelectEntry();
             break;
             
         case '1': case '2': case '3': case '4':

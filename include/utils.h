@@ -14,6 +14,7 @@ void abFree(struct abuf *ab);
 void die(const char *s);
 void editorOpen(char *filename);
 void editorSave(void);
+void editorSelectEntry(void);
 char *editorRowsToString(int *buflen);
 
 #endif

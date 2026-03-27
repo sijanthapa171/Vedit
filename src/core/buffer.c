@@ -58,6 +58,16 @@ void editorDelRow(int at) {
     E.dirty++;
 }
 
+void editorClearBuffer(void) {
+    for (int i = 0; i < E.numrows; i++) {
+        editorFreeRow(&E.row[i]);
+    }
+    free(E.row);
+    E.row = NULL;
+    E.numrows = 0;
+    E.dirty = 0;
+}
+
 void editorRowInsertChar(erow *row, int at, int c) {
     if (at < 0 || at > row->size) at = row->size;
     row->chars = realloc(row->chars, row->size + 2);

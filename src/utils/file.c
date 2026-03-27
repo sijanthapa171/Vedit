@@ -33,8 +33,11 @@ char *editorRowsToString(int *buflen) {
 }
 
 void editorOpen(char *filename) {
+    editorClearBuffer();
     free(E.filename);
     E.filename = strdup(filename);
+    E.cy = 0;
+    E.cx = 0;
     
     struct stat statbuf;
     if (stat(filename, &statbuf) == 0 && S_ISDIR(statbuf.st_mode)) {
@@ -51,7 +54,7 @@ void editorOpen(char *filename) {
         
         struct dirent *dir;
         while ((dir = readdir(d)) != NULL) {
-            if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0) continue;
+            if (strcmp(dir->d_name, ".") == 0) continue;
             
             char entry[256];
             int is_dir = (dir->d_type == DT_DIR);
@@ -97,6 +100,55 @@ void editorOpen(char *filename) {
     free(line);
     fclose(fp);
     E.dirty = 0;
+}
+
+void editorSelectEntry(void) {
+    if (E.numrows == 0) return;
+    
+    struct stat statbuf;
+    if (stat(E.filename, &statbuf) != 0 || !S_ISDIR(statbuf.st_mode)) {
+        // Not a directory listing, nothing to select
+        return;
+    }
+
+    if (E.cy < 2 || E.cy >= E.numrows) return;
+
+    char *row_text = E.row[E.cy].chars;
+    // Skip the leading spaces added for formatting
+    while (*row_text == ' ') row_text++;
+
+    char *name = strdup(row_text);
+    size_t len = strlen(name);
+    if (len > 0 && name[len - 1] == '/') {
+        name[len - 1] = '\0';
+    }
+
+    char next_path[1024];
+    if (strcmp(name, "..") == 0) {
+        // Handle ".." navigate up
+        char *last_slash = strrchr(E.filename, '/');
+        if (last_slash) {
+            if (last_slash == E.filename) {
+                // Root directory
+                strcpy(next_path, "/");
+            } else {
+                size_t path_len = last_slash - E.filename;
+                strncpy(next_path, E.filename, path_len);
+                next_path[path_len] = '\0';
+            }
+        } else if (strcmp(E.filename, ".") != 0) {
+            strcpy(next_path, "..");
+        } else {
+            // If already at ".", we can't easily go up without knowing absolute path
+            // But let's try ".." anyway
+            strcpy(next_path, "..");
+        }
+    } else {
+        snprintf(next_path, sizeof(next_path), "%s/%s", E.filename, name);
+    }
+
+    free(name);
+    editorOpen(next_path);
 }
 
 void editorSave(void) {
