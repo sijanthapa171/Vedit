@@ -37,13 +37,17 @@ static const char *help_text[] = {
     "  Other lines show relative distance (Dim Gray).",
     "",
     "EXPLORER MODE:",
-    "  j, k                 : Move cursor",
-    "  Enter                : Open file or directory",
-    "  Esc                  : Return to Normal Mode (or use :q to exit)",
-    "",
-    "HELP MODE:",
-    "  j, k / Up, Down      : Scroll Help text",
-    "  q, Esc, Enter        : Close Help screen",
+    "  j, k                 : Move cursor Up/Down",
+    "  h, l / Arrows        : Parent Directory / Open Folder",
+    "  Enter, o             : Open file or directory",
+    "  a, A                 : Create New File / Folder",
+    "  r, d                 : Rename / Delete (with confirmation)",
+    "  y, x, p              : Copy / Cut / Paste",
+    "  /                    : Search files",
+    "  n, N                 : Next / Previous search result",
+    "  .                    : Toggle hidden files",
+    "  R                    : Refresh directory",
+    "  q, Esc               : Return to Normal Mode",
     NULL
 };
 
@@ -179,6 +183,10 @@ void editorDrawRows(struct abuf *ab) {
                 }
             } else {
                 if (E.mode == MODE_EXPLORER) {
+                    int search_match = (E.explorer_search_pattern[0] != '\0' && strstr(E.row[filerow].chars, E.explorer_search_pattern) != NULL);
+                    
+                    if (search_match) abAppend(ab, "\x1b[43;30m", 7); // Black on Yellow background for search matches
+
                     if (E.row[filerow].size > 0 && E.row[filerow].chars[E.row[filerow].size - 1] == '/') {
                         abAppend(ab, "\x1b[1;34m", 7); 
                         abAppend(ab, &E.row[filerow].render[E.coloff], len);
@@ -188,6 +196,8 @@ void editorDrawRows(struct abuf *ab) {
                         abAppend(ab, &E.row[filerow].render[E.coloff], len);
                         abAppend(ab, "\x1b[0m", 4);
                     }
+                    
+                    if (search_match) abAppend(ab, "\x1b[m", 3);
                 } else {
                     if (len > 0) abAppend(ab, &E.row[filerow].render[E.coloff], len);
                 }

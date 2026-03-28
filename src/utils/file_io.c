@@ -74,6 +74,11 @@ void editorOpen(char *filename) {
         
         struct dirent *dir;
         while ((dir = readdir(d)) != NULL) {
+            if (!E.explorer_show_hidden && dir->d_name[0] == '.' && 
+                strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
+                continue;
+            }
+
             if (count >= capacity) {
                 capacity = capacity == 0 ? 10 : capacity * 2;
                 entries = realloc(entries, capacity * sizeof(DirEntry));

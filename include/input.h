@@ -24,5 +24,6 @@ void normalModeProcessKey(int c);
 void insertModeProcessKey(int c);
 void helpModeProcessKey(int c);
 void visualModeProcessKey(int c);
+void explorerModeProcessKey(int c);
 
 #endif

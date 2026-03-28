@@ -17,4 +17,14 @@ void editorSave(void);
 void editorSelectEntry(void);
 char *editorRowsToString(int *buflen);
 
+void explorerCreateFile(void);
+void explorerCreateFolder(void);
+void explorerRename(void);
+void explorerDelete(void);
+void explorerCopy(void);
+void explorerCut(void);
+void explorerPaste(void);
+void explorerRefresh(void);
+void explorerToggleHidden(void);
+
 #endif

@@ -56,6 +56,11 @@ struct editorConfig {
     int ln_width;
 
     int sel_sx, sel_sy;
+
+    char explorer_search_pattern[128];
+    int explorer_show_hidden;
+    char explorer_clip_path[1024];
+    int explorer_clip_is_cut;
 };
 
 extern struct editorConfig E;

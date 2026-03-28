@@ -27,6 +27,11 @@ void initEditor(void) {
     E.sel_sx = -1;
     E.sel_sy = -1;
     
+    E.explorer_search_pattern[0] = '\0';
+    E.explorer_show_hidden = 0;
+    E.explorer_clip_path[0] = '\0';
+    E.explorer_clip_is_cut = 0;
+    
     if (getWindowSize(&E.screenrows, &E.screencols) == -1) {
         die("getWindowSize");
     }

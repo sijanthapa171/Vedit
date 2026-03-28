@@ -56,7 +56,6 @@ void normalModeProcessKey(int c) {
             break;
             
         case 'u':
-            if (E.mode == MODE_EXPLORER) break;
             E.command_count = 0;
             editorUndo();
             break;
@@ -68,7 +67,6 @@ void normalModeProcessKey(int c) {
             break;
             
         case 'v':
-            if (E.mode == MODE_EXPLORER) break;
             E.command_count = 0;
             E.mode = MODE_VISUAL;
             E.sel_sx = E.cx;
@@ -78,7 +76,6 @@ void normalModeProcessKey(int c) {
             
         case '\r':
             E.command_count = 0;
-            editorSelectEntry();
             break;
             
         case '1': case '2': case '3': case '4':
@@ -131,7 +128,6 @@ void normalModeProcessKey(int c) {
             break;
             
         case 'x':
-            if (E.mode == MODE_EXPLORER) break;
             E.command_count = 0;
             if (E.cy < E.numrows && E.row[E.cy].size > 0) {
                 editorSaveUndoState();
@@ -140,7 +136,6 @@ void normalModeProcessKey(int c) {
             break;
             
         case 'd':
-            if (E.mode == MODE_EXPLORER) break;
             E.command_count = 0;
             if (E.pending_key == 'd') {
                 /* dd: delete current line */
