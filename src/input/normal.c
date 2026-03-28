@@ -1,5 +1,6 @@
-#include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include "editor.h"
 #include "input.h"
 #include "commands.h"
@@ -168,6 +169,75 @@ void normalModeProcessKey(int c) {
             if (E.numrows > 0) E.cy = E.numrows - 1;
             else E.cy = 0;
             E.cx = 0;
+            break;
+
+        case '/':
+            {
+                char *pattern = editorPrompt("Search: /%s (Append [!] for global)");
+                if (pattern) {
+                    int global = 0;
+                    size_t plen = strlen(pattern);
+                    if (plen > 0 && pattern[plen-1] == '!') {
+                        pattern[plen-1] = '\0';
+                        global = 1;
+                    }
+
+                    strncpy(E.search_pattern, pattern, sizeof(E.search_pattern) - 1);
+                    free(pattern);
+                    
+                    if (global) {
+                        editorOpenSearchResults(E.search_pattern);
+                        return;
+                    }
+
+                    int found = 0;
+                    for (int i = 0; i < E.numrows; i++) {
+                        int filerow = (E.cy + i) % E.numrows;
+                        char *match = strstr(E.row[filerow].chars, E.search_pattern);
+                        if (match) {
+                            E.cy = filerow;
+                            E.cx = match - E.row[filerow].chars;
+                            found = 1;
+                            break;
+                        }
+                    }
+                    if (!found) editorSetStatusMessage("Pattern not found: %s", E.search_pattern);
+                }
+            }
+            break;
+
+        case 'n':
+            if (E.search_pattern[0] != '\0') {
+                int found = 0;
+                for (int i = 1; i <= E.numrows; i++) {
+                    int filerow = (E.cy + i) % E.numrows;
+                    char *match = strstr(E.row[filerow].chars, E.search_pattern);
+                    if (match) {
+                        E.cy = filerow;
+                        E.cx = match - E.row[filerow].chars;
+                        found = 1;
+                        break;
+                    }
+                }
+                if (!found) editorSetStatusMessage("Pattern not found: %s", E.search_pattern);
+            }
+            break;
+
+        case 'N':
+            if (E.search_pattern[0] != '\0') {
+                int found = 0;
+                for (int i = 1; i <= E.numrows; i++) {
+                    int filerow = (E.cy - i + E.numrows) % E.numrows;
+                    char *match = strstr(E.row[filerow].chars, E.search_pattern);
+                    if (match) {
+                        E.cy = filerow;
+                        E.cx = match - E.row[filerow].chars;
+                        found = 1;
+                        break;
+                    }
+                }
+                if (!found) editorSetStatusMessage("Pattern not found: %s", E.search_pattern);
+            }
             break;
 
         case CTRL_KEY('q'):

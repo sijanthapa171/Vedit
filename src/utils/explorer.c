@@ -23,6 +23,13 @@ char *explorerGetCurrentName(void) {
     if (strcmp(row_text, "../") == 0 || strcmp(row_text, "..") == 0) return strdup("..");
     if (strcmp(row_text, "./") == 0 || strcmp(row_text, ".") == 0) return strdup(".");
 
+    if (E.explorer_is_search) {
+        char *line = strdup(row_text);
+        char *colon = strchr(line, ':');
+        if (colon) *colon = '\0';
+        return line;
+    }
+
     char *name = strdup(row_text);
     size_t len = strlen(name);
     if (len > 0 && name[len - 1] == '/') {
@@ -32,6 +39,31 @@ char *explorerGetCurrentName(void) {
 }
 
 void editorSelectEntry(void) {
+    if (E.numrows == 0 || E.cy >= E.numrows) return;
+
+    if (E.explorer_is_search) {
+        char *line_text = strdup(E.row[E.cy].chars);
+        char *first_colon = strchr(line_text, ':');
+        if (first_colon) {
+            *first_colon = '\0';
+            char *filename = line_text;
+            char *second_colon = strchr(first_colon + 1, ':');
+            int line_num = 0;
+            if (second_colon) {
+                *second_colon = '\0';
+                line_num = atoi(first_colon + 1);
+            }
+            
+            editorOpen(filename);
+            if (line_num > 0 && line_num <= E.numrows) {
+                E.cy = line_num - 1;
+                if (E.cy >= E.screenrows) E.rowoff = E.cy - E.screenrows / 2;
+            }
+        }
+        free(line_text);
+        return;
+    }
+
     char *name = explorerGetCurrentName();
     if (!name) return;
 

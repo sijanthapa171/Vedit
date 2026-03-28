@@ -58,6 +58,7 @@ void editorOpen(char *filename) {
     editorClearBuffer();
     free(E.filename);
     E.filename = new_filename;
+    E.explorer_is_search = 0;
     E.cy = 0;
     E.cx = 0;
     
@@ -149,6 +150,45 @@ void editorOpen(char *filename) {
     free(line);
     fclose(fp);
     E.dirty = 0;
+}
+
+void editorOpenSearchResults(char *query) {
+    editorClearBuffer();
+    free(E.filename);
+    E.filename = strdup("Search Results");
+    E.cy = 0;
+    E.cx = 0;
+    E.mode = MODE_EXPLORER;
+    E.explorer_is_search = 1;
+
+    char cmd[4096];
+    // Exclude common directories to speed up search
+    snprintf(cmd, sizeof(cmd), "grep -rn --exclude-dir=.git --exclude-dir=build --exclude-dir=bin --exclude-dir=.direnv \"%s\" . 2>/dev/null", query);
+    
+    FILE *fp = popen(cmd, "r");
+    if (!fp) {
+        editorSetStatusMessage("Error: Could not run grep");
+        return;
+    }
+
+    char *line = NULL;
+    size_t linecap = 0;
+    ssize_t linelen;
+    while ((linelen = getline(&line, &linecap, fp)) != -1) {
+        while (linelen > 0 && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r')) {
+            linelen--;
+        }
+        editorInsertRow(E.numrows, line, linelen);
+    }
+    free(line);
+    pclose(fp);
+
+    if (E.numrows == 0) {
+        editorInsertRow(0, "No results found.", 17);
+        editorSetStatusMessage("No results found for: %s", query);
+    } else {
+        editorSetStatusMessage("Found %d matches for: %s", E.numrows, query);
+    }
 }
 
 void editorSave(void) {

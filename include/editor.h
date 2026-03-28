@@ -53,12 +53,12 @@ struct editorConfig {
     
     UndoStep undo_stack[50];
     int undo_stack_size;
+    int sel_sx, sel_sy;
     int ln_width;
 
-    int sel_sx, sel_sy;
-
-    char explorer_search_pattern[128];
+    char search_pattern[128];
     int explorer_show_hidden;
+    int explorer_is_search;
     char explorer_clip_path[4096];
     int explorer_clip_is_cut;
 };

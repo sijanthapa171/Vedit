@@ -184,9 +184,9 @@ void editorDrawRows(struct abuf *ab) {
                 }
             } else {
                 if (E.mode == MODE_EXPLORER) {
-                    int search_match = (E.explorer_search_pattern[0] != '\0' && strstr(E.row[filerow].chars, E.explorer_search_pattern) != NULL);
+                    int search_match = (E.search_pattern[0] != '\0' && strstr(E.row[filerow].chars, E.search_pattern) != NULL);
                     
-                    if (search_match) abAppend(ab, "\x1b[43;30m", 7); // Black on Yellow background for search matches
+                    if (search_match) abAppend(ab, "\x1b[43;30m", 7); 
 
                     if (E.row[filerow].size > 0 && E.row[filerow].chars[E.row[filerow].size - 1] == '/') {
                         abAppend(ab, "\x1b[1;34m", 7); 
@@ -200,7 +200,79 @@ void editorDrawRows(struct abuf *ab) {
                     
                     if (search_match) abAppend(ab, "\x1b[m", 3);
                 } else {
-                    if (len > 0) abAppend(ab, &E.row[filerow].render[E.coloff], len);
+                    if (E.search_pattern[0] != '\0') {
+                        char *line = E.row[filerow].render;
+                        int linelen = E.row[filerow].rsize;
+                        char *p = line;
+                        while ((p = strstr(p, E.search_pattern)) != NULL) {
+                            int match_idx = p - line;
+                            if (match_idx >= E.coloff && match_idx < E.coloff + E.screencols - E.ln_width) {
+                                break; 
+                            }
+                            p++;
+                        }
+                        
+                        int last_match_end = 0;
+                        char *match_ptr = line;
+                        while ((match_ptr = strstr(match_ptr, E.search_pattern)) != NULL) {
+                            int match_start = match_ptr - line;
+                            int match_len = strlen(E.search_pattern);
+                            
+                            int before_len = match_start - last_match_end;
+                            if (before_len > 0) {
+                                int draw_start = last_match_end - E.coloff;
+                                int draw_len = before_len;
+                                if (draw_start < 0) {
+                                    draw_len += draw_start;
+                                    draw_start = 0;
+                                }
+                                if (draw_len > 0) {
+                                    if (draw_start + draw_len > E.screencols - E.ln_width)
+                                        draw_len = (E.screencols - E.ln_width) - draw_start;
+                                    if (draw_len > 0) 
+                                        abAppend(ab, &line[draw_start + E.coloff], draw_len);
+                                }
+                            }
+                            
+                            // Draw the match with highlight
+                            int draw_start = match_start - E.coloff;
+                            int draw_len = match_len;
+                            if (draw_start < 0) {
+                                draw_len += draw_start;
+                                draw_start = 0;
+                            }
+                            if (draw_len > 0) {
+                                if (draw_start + draw_len > E.screencols - E.ln_width)
+                                    draw_len = (E.screencols - E.ln_width) - draw_start;
+                                if (draw_len > 0) {
+                                    abAppend(ab, "\x1b[43;30m", 7); 
+                                    abAppend(ab, &line[draw_start + E.coloff], draw_len);
+                                    abAppend(ab, "\x1b[m", 3);
+                                }
+                            }
+                            
+                            last_match_end = match_start + match_len;
+                            match_ptr += match_len;
+                        }
+                        
+                        int remaining_len = linelen - last_match_end;
+                        if (remaining_len > 0) {
+                            int draw_start = last_match_end - E.coloff;
+                            int draw_len = remaining_len;
+                            if (draw_start < 0) {
+                                draw_len += draw_start;
+                                draw_start = 0;
+                            }
+                            if (draw_len > 0) {
+                                if (draw_start + draw_len > E.screencols - E.ln_width)
+                                    draw_len = (E.screencols - E.ln_width) - draw_start;
+                                if (draw_len > 0)
+                                    abAppend(ab, &line[draw_start + E.coloff], draw_len);
+                            }
+                        }
+                    } else {
+                        if (len > 0) abAppend(ab, &E.row[filerow].render[E.coloff], len);
+                    }
                 }
             }
         }

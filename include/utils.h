@@ -25,6 +25,8 @@ void explorerCopy(void);
 void explorerCut(void);
 void explorerPaste(void);
 void explorerRefresh(void);
+
+void editorOpenSearchResults(char *query);
 void explorerToggleHidden(void);
 
 #endif

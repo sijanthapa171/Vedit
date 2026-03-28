@@ -139,14 +139,26 @@ void explorerModeProcessKey(int c) {
 
         case '/':
             {
-                char *pattern = editorPrompt("Search: /%s");
+                char *pattern = editorPrompt("Search: /%s (Append [!] for global)");
                 if (pattern) {
-                    strncpy(E.explorer_search_pattern, pattern, sizeof(E.explorer_search_pattern) - 1);
+                    int global = 0;
+                    size_t plen = strlen(pattern);
+                    if (plen > 0 && pattern[plen-1] == '!') {
+                        pattern[plen-1] = '\0';
+                        global = 1;
+                    }
+
+                    strncpy(E.search_pattern, pattern, sizeof(E.search_pattern) - 1);
                     free(pattern);
-                    // Jump to first match from current position
+                    
+                    if (global) {
+                        editorOpenSearchResults(E.search_pattern);
+                        return;
+                    }
+
                     int i;
                     for (i = E.cy; i < E.numrows; i++) {
-                        if (strstr(E.row[i].chars, E.explorer_search_pattern)) {
+                        if (strstr(E.row[i].chars, E.search_pattern)) {
                             E.cy = i;
                             break;
                         }
@@ -157,10 +169,10 @@ void explorerModeProcessKey(int c) {
 
         case 'n':
             {
-                if (E.explorer_search_pattern[0] == '\0') break;
+                if (E.search_pattern[0] == '\0') break;
                 int i;
                 for (i = E.cy + 1; i < E.numrows; i++) {
-                    if (strstr(E.row[i].chars, E.explorer_search_pattern)) {
+                    if (strstr(E.row[i].chars, E.search_pattern)) {
                         E.cy = i;
                         break;
                     }
@@ -170,10 +182,10 @@ void explorerModeProcessKey(int c) {
 
         case 'N':
             {
-                if (E.explorer_search_pattern[0] == '\0') break;
+                if (E.search_pattern[0] == '\0') break;
                 int i;
                 for (i = E.cy - 1; i >= 4; i--) {
-                    if (strstr(E.row[i].chars, E.explorer_search_pattern)) {
+                    if (strstr(E.row[i].chars, E.search_pattern)) {
                         E.cy = i;
                         break;
                     }
