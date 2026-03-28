@@ -11,6 +11,7 @@ static const char *help_text[] = {
     "",
     "NORMAL MODE:",
     "  h, j, k, l / Arrows  : Move cursor (Left, Down, Up, Right)",
+    "  gg / G               : Go to Top / Bottom of file",
     "  i                    : Enter Insert Mode",
     "  :                    : Enter Command Mode",
     "  PageUp / PageDown    : Scroll Page",

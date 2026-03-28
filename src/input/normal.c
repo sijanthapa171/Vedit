@@ -151,6 +151,25 @@ void normalModeProcessKey(int c) {
             }
             break;
 
+        case 'g':
+            if (E.pending_key == 'g') {
+                E.cy = 0;
+                E.cx = 0;
+                E.pending_key = 0;
+                editorSetStatusMessage("");
+            } else {
+                E.pending_key = 'g';
+                editorSetStatusMessage("g");
+            }
+            break;
+
+        case 'G':
+            E.command_count = 0;
+            if (E.numrows > 0) E.cy = E.numrows - 1;
+            else E.cy = 0;
+            E.cx = 0;
+            break;
+
         case CTRL_KEY('q'):
             E.command_count = 0;
             E.pending_key = 0;
