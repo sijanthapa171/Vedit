@@ -84,6 +84,10 @@ void commandModeProcess(void) {
         E.mode = MODE_HELP;
         free(query);
         return;
+    } else if (strcmp(query, "Ex") == 0) {
+        editorOpen(".");
+        free(query);
+        return;
     } else {
         editorSetStatusMessage("Not an editor command: %s", query);
     }

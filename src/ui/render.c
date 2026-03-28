@@ -61,14 +61,18 @@ void editorScroll(void) {
     }
 
     int lines = E.numrows;
-    E.ln_width = 2; 
-    if (lines > 0) {
-        int digits = 0;
-        while (lines > 0) {
-            digits++;
-            lines /= 10;
+    if (E.mode == MODE_EXPLORER) {
+        E.ln_width = 0;
+    } else {
+        E.ln_width = 2; 
+        if (lines > 0) {
+            int digits = 0;
+            while (lines > 0) {
+                digits++;
+                lines /= 10;
+            }
+            E.ln_width = digits + 1; 
         }
-        E.ln_width = digits + 1; 
     }
 }
 
@@ -116,18 +120,20 @@ void editorDrawRows(struct abuf *ab) {
                 for (int i = 1; i < E.ln_width; i++) abAppend(ab, " ", 1);
             }
         } else {
-            int display_num = (filerow == E.cy) ? (filerow + 1) : (filerow > E.cy ? filerow - E.cy : E.cy - filerow);
-            char ln[16];
-            int ln_len = snprintf(ln, sizeof(ln), "%*d ", E.ln_width - 1, display_num);
-            
-            if (filerow == E.cy) {
-                abAppend(ab, "\x1b[1;33m", 7); 
-                abAppend(ab, ln, ln_len);
-                abAppend(ab, "\x1b[m", 3);
-            } else {
-                abAppend(ab, "\x1b[90m", 5); 
-                abAppend(ab, ln, ln_len);
-                abAppend(ab, "\x1b[m", 3);
+            if (E.ln_width > 0) {
+                int display_num = (filerow == E.cy) ? (filerow + 1) : (filerow > E.cy ? filerow - E.cy : E.cy - filerow);
+                char ln[16];
+                int ln_len = snprintf(ln, sizeof(ln), "%*d ", E.ln_width - 1, display_num);
+                
+                if (filerow == E.cy) {
+                    abAppend(ab, "\x1b[1;33m", 7); 
+                    abAppend(ab, ln, ln_len);
+                    abAppend(ab, "\x1b[m", 3);
+                } else {
+                    abAppend(ab, "\x1b[90m", 5); 
+                    abAppend(ab, ln, ln_len);
+                    abAppend(ab, "\x1b[m", 3);
+                }
             }
 
             int len = E.row[filerow].rsize - E.coloff;
@@ -161,7 +167,19 @@ void editorDrawRows(struct abuf *ab) {
                     if (is_sel) abAppend(ab, "\x1b[m", 3);
                 }
             } else {
-                if (len > 0) abAppend(ab, &E.row[filerow].render[E.coloff], len);
+                if (E.mode == MODE_EXPLORER) {
+                    if (E.row[filerow].size > 0 && E.row[filerow].chars[E.row[filerow].size - 1] == '/') {
+                        abAppend(ab, "\x1b[1;34m", 7); 
+                        abAppend(ab, &E.row[filerow].render[E.coloff], len);
+                        abAppend(ab, "\x1b[0m", 4);
+                    } else {
+                        abAppend(ab, "\x1b[32m", 5); 
+                        abAppend(ab, &E.row[filerow].render[E.coloff], len);
+                        abAppend(ab, "\x1b[0m", 4);
+                    }
+                } else {
+                    if (len > 0) abAppend(ab, &E.row[filerow].render[E.coloff], len);
+                }
             }
         }
         
@@ -180,6 +198,7 @@ void editorDrawStatusBar(struct abuf *ab) {
     if (E.mode == MODE_INSERT) modestr = "INSERT";
     else if (E.mode == MODE_COMMAND) modestr = "COMMAND";
     else if (E.mode == MODE_HELP) modestr = "HELP";
+    else if (E.mode == MODE_EXPLORER) modestr = "EXPLORER";
     
     int rlen = snprintf(rstatus, sizeof(rstatus), "[%s] %d/%d", modestr, E.cy + 1, E.numrows);
     if (len > E.screencols) len = E.screencols;

@@ -13,7 +13,8 @@ enum EditorMode {
     MODE_INSERT,
     MODE_COMMAND,
     MODE_HELP,
-    MODE_VISUAL
+    MODE_VISUAL,
+    MODE_EXPLORER
 };
 
 typedef struct erow {

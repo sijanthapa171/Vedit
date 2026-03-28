@@ -17,7 +17,7 @@ void editorSelectEntry(void) {
         return;
     }
 
-    if (E.cy < 2 || E.cy >= E.numrows) return;
+    if (E.cy < 4 || E.cy >= E.numrows) return;
 
     char *row_text = E.row[E.cy].chars;
     while (*row_text == ' ') row_text++;
@@ -40,7 +40,7 @@ void editorSelectEntry(void) {
                 next_path[path_len] = '\0';
             }
         } else if (strcmp(E.filename, ".") != 0) {
-            strcpy(next_path, "..");
+            snprintf(next_path, sizeof(next_path), "%s/..", E.filename);
         } else {
             strcpy(next_path, "..");
         }

@@ -97,6 +97,13 @@ void editorOpen(char *filename) {
         
         qsort(entries, count, sizeof(DirEntry), compareDirEntries);
         
+        char header[1024];
+        editorInsertRow(E.numrows, "\" ============================================================================", 78);
+        editorInsertRow(E.numrows, "\" Netrw Directory Listing", 25);
+        snprintf(header, sizeof(header), "\"   %s", filename);
+        editorInsertRow(E.numrows, header, strlen(header));
+        editorInsertRow(E.numrows, "\" ============================================================================", 78);
+
         for (int i = 0; i < count; i++) {
             char line[512];
             if (entries[i].is_dir) {
@@ -109,10 +116,14 @@ void editorOpen(char *filename) {
         }
         free(entries);
         
+        E.mode = MODE_EXPLORER;
         E.dirty = 0;
+        E.cy = 4; 
         editorSetStatusMessage("Opened directory: %s (%d items)", filename, count);
         return;
     }
+
+    E.mode = MODE_NORMAL;
     
     FILE *fp = fopen(filename, "r");
     if (!fp) {
