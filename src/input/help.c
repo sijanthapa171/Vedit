@@ -19,8 +19,6 @@ void helpModeProcessKey(int c) {
             
         case ARROW_DOWN:
         case 'j':
-            // E.help_rowoff max check is handled in render logic, or we can just scroll unbounded
-            // but we'll limit it somewhat (like 100) or let render handle bounds.
             E.help_rowoff++;
             break;
             
@@ -41,7 +39,6 @@ void helpModeProcessKey(int c) {
             break;
             
         case END_KEY:
-            // Could set to huge number, render logic handles cap
             E.help_rowoff = 9999;
             break;
     }
