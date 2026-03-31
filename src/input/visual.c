@@ -26,6 +26,10 @@ void visualModeProcessKey(int c) {
             editorMoveCursor(c);
             break;
 
+        case MOUSE_EVENT:
+            editorHandleMouseClick();
+            break;
+
         case 'x':
         case 'd':
             editorSaveUndoState();

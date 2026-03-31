@@ -254,6 +254,12 @@ void normalModeProcessKey(int c) {
             exit(0);
             break;
             
+        case MOUSE_EVENT:
+            E.command_count = 0;
+            E.pending_key = 0;
+            editorHandleMouseClick();
+            break;
+
         default:
             E.command_count = 0;
             E.pending_key = 0;

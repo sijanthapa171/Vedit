@@ -26,5 +26,6 @@ void insertModeProcessKey(int c);
 void helpModeProcessKey(int c);
 void visualModeProcessKey(int c);
 void explorerModeProcessKey(int c);
+void editorHandleMouseClick(void);
 
 #endif

@@ -33,6 +33,10 @@ void insertModeProcessKey(int c) {
             editorMoveCursor(c);
             break;
             
+        case MOUSE_EVENT:
+            editorHandleMouseClick();
+            break;
+
         default:
             if (c >= 32 && c < 127) {
                 editorInsertChar(c);
