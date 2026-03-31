@@ -61,6 +61,8 @@ struct editorConfig {
     int explorer_is_search;
     char explorer_clip_path[4096];
     int explorer_clip_is_cut;
+
+    int mouseX, mouseY, mouseButton;
 };
 
 extern struct editorConfig E;

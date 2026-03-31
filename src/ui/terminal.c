@@ -9,6 +9,7 @@ void disableRawMode(void) {
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios) == -1) {
         die("tcsetattr");
     }
+    if (write(STDOUT_FILENO, "\x1b[?1000l\x1b[?1006l", 16) == -1) {}
 }
 
 void enableRawMode(void) {
@@ -25,6 +26,7 @@ void enableRawMode(void) {
     raw.c_cc[VTIME] = 1;
     
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr");
+    if (write(STDOUT_FILENO, "\x1b[?1000h\x1b[?1006h", 16) == -1) {}
 }
 
 int getWindowSize(int *rows, int *cols) {

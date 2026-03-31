@@ -193,6 +193,18 @@ void explorerModeProcessKey(int c) {
             }
             break;
 
+        case MOUSE_EVENT:
+            {
+                int clicked_row = E.mouseY + E.rowoff;
+                if (clicked_row >= 0 && clicked_row < E.numrows) {
+                    if (E.mouseButton == 0) { 
+                        E.cy = clicked_row;
+                        editorSelectEntry();
+                    }
+                }
+            }
+            break;
+
         default:
             E.pending_key = 0;
             break;

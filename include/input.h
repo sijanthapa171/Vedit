@@ -11,7 +11,8 @@ enum editorKey {
     HOME_KEY,
     END_KEY,
     PAGE_UP,
-    PAGE_DOWN
+    PAGE_DOWN,
+    MOUSE_EVENT
 };
 
 #define CTRL_KEY(k) ((k) & 0x1f)
