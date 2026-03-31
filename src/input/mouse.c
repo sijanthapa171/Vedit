@@ -25,3 +25,11 @@ void editorHandleMouseClick(void) {
         else E.cx = 0;
     }
 }
+
+void editorHandleMouseScroll(int key) {
+    if (key == MOUSE_WHEEL_UP) {
+        if (E.rowoff > 0) E.rowoff--;
+    } else if (key == MOUSE_WHEEL_DOWN) {
+        if (E.rowoff + E.screenrows < E.numrows) E.rowoff++;
+    }
+}

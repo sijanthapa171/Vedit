@@ -205,6 +205,11 @@ void explorerModeProcessKey(int c) {
             }
             break;
 
+        case MOUSE_WHEEL_UP:
+        case MOUSE_WHEEL_DOWN:
+            editorHandleMouseScroll(c);
+            break;
+
         default:
             E.pending_key = 0;
             break;

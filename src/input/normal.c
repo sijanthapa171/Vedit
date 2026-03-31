@@ -139,7 +139,6 @@ void normalModeProcessKey(int c) {
         case 'd':
             E.command_count = 0;
             if (E.pending_key == 'd') {
-                /* dd: delete current line */
                 E.pending_key = 0;
                 if (E.numrows == 0) break;
                 editorDelRow(E.cy);
@@ -258,6 +257,13 @@ void normalModeProcessKey(int c) {
             E.command_count = 0;
             E.pending_key = 0;
             editorHandleMouseClick();
+            break;
+
+        case MOUSE_WHEEL_UP:
+        case MOUSE_WHEEL_DOWN:
+            E.command_count = 0;
+            E.pending_key = 0;
+            editorHandleMouseScroll(c);
             break;
 
         default:

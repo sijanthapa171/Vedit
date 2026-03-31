@@ -30,6 +30,11 @@ void visualModeProcessKey(int c) {
             editorHandleMouseClick();
             break;
 
+        case MOUSE_WHEEL_UP:
+        case MOUSE_WHEEL_DOWN:
+            editorHandleMouseScroll(c);
+            break;
+            
         case 'x':
         case 'd':
             editorSaveUndoState();

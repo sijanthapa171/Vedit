@@ -42,6 +42,8 @@ int editorReadKey(void) {
                     E.mouseX = x - 1;
                     E.mouseY = y - 1;
                     E.mouseButton = button;
+                    if (button == 64) return MOUSE_WHEEL_UP;
+                    if (button == 65) return MOUSE_WHEEL_DOWN;
                     if (m == 'M') return MOUSE_EVENT;
                 }
                 return '\x1b';

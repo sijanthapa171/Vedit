@@ -12,7 +12,9 @@ enum editorKey {
     END_KEY,
     PAGE_UP,
     PAGE_DOWN,
-    MOUSE_EVENT
+    MOUSE_EVENT,
+    MOUSE_WHEEL_UP,
+    MOUSE_WHEEL_DOWN
 };
 
 #define CTRL_KEY(k) ((k) & 0x1f)
@@ -27,5 +29,6 @@ void helpModeProcessKey(int c);
 void visualModeProcessKey(int c);
 void explorerModeProcessKey(int c);
 void editorHandleMouseClick(void);
+void editorHandleMouseScroll(int key);
 
 #endif

@@ -37,6 +37,11 @@ void insertModeProcessKey(int c) {
             editorHandleMouseClick();
             break;
 
+        case MOUSE_WHEEL_UP:
+        case MOUSE_WHEEL_DOWN:
+            editorHandleMouseScroll(c);
+            break;
+
         default:
             if (c >= 32 && c < 127) {
                 editorInsertChar(c);
