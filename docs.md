@@ -63,7 +63,10 @@ vedit/
 │   │   ├── modes.c         # editorProcessKeypress() — mode dispatch
 │   │   ├── normal.c        # normalModeProcessKey() + cursor movement
 │   │   ├── insert.c        # insertModeProcessKey()
-│   │   └── help.c          # helpModeProcessKey()
+│   │   ├── help.c          # helpModeProcessKey()
+│   │   ├── visual.c        # visualModeProcessKey()
+│   │   ├── explorer_input.c# explorerModeProcessKey()
+│   │   └── mouse.c         # Mouse event handling
 │   ├── ui/
 │   │   ├── render.c        # Screen drawing, status/message bars, line numbers
 │   │   └── terminal.c      # enableRawMode / disableRawMode / getWindowSize
@@ -95,6 +98,9 @@ graph TD
         normal["normal.c\nnormalModeProcessKey()"]
         insert["insert.c\ninsertModeProcessKey()"]
         help["help.c\nhelpModeProcessKey()"]
+        visual["visual.c\nvisualModeProcessKey()"]
+        explorer_input["explorer_input.c\nexplorerModeProcessKey()"]
+        mouse["mouse.c\neditorHandleMouseClick()"]
     end
 
     subgraph Core Layer
@@ -124,6 +130,9 @@ graph TD
     modes --> normal
     modes --> insert
     modes --> help
+    modes --> visual
+    modes --> explorer_input
+    modes --> mouse
     normal --> edit
     normal --> undo
     normal --> prompt
@@ -154,6 +163,8 @@ classDiagram
         MODE_INSERT
         MODE_COMMAND
         MODE_HELP
+        MODE_VISUAL
+        MODE_EXPLORER
     }
 
     class UndoStep {
@@ -184,7 +195,14 @@ classDiagram
         +int pending_key
         +UndoStep undo_stack[50]
         +int undo_stack_size
+        +int sel_sx, sel_sy
         +int ln_width
+        +char search_pattern[128]
+        +int explorer_show_hidden
+        +int explorer_is_search
+        +char explorer_clip_path[4096]
+        +int explorer_clip_is_cut
+        +int mouseX, mouseY, mouseButton
     }
 
     class abuf {
@@ -210,11 +228,15 @@ stateDiagram-v2
     NORMAL --> INSERT : Press 'i'
     NORMAL --> COMMAND : Press ':'
     NORMAL --> HELP : ':help' command
+    NORMAL --> VISUAL : Press 'v'
+    NORMAL --> EXPLORER : ':Ex' command
     NORMAL --> [*] : Ctrl-Q / ':q' / ':q!'
 
     INSERT --> NORMAL : Press Escape
     COMMAND --> NORMAL : Enter / Escape / command executed
     HELP --> NORMAL : Press 'q' / Escape / Enter
+    VISUAL --> NORMAL : Press Escape / 'v'
+    EXPLORER --> NORMAL : Press 'q' / Escape
 
     NORMAL --> NORMAL : h j k l / arrows\n0 $ dd PageUp PageDown
 ```
@@ -223,10 +245,12 @@ stateDiagram-v2
 
 | Mode | File | Behaviour |
 |---|---|---|
-| `MODE_NORMAL` | `normal.c` | Navigation, `dd`, numeric prefix, trigger mode switches |
+| `MODE_NORMAL` | `normal.c` | Navigation, `dd`, numeric prefix, mode switches, search (`/`, `n`, `N`) |
 | `MODE_INSERT` | `insert.c` | Typing characters, Backspace, Enter, Escape to exit |
-| `MODE_COMMAND` | `prompt.c` | Reads a `:cmd` string, dispatches `w`, `q`, `wq`, `q!`, `help` |
+| `MODE_COMMAND` | `prompt.c` | Reads a `:cmd` string, dispatches `w`, `q`, `wq`, `q!`, `help`, `Ex` |
 | `MODE_HELP` | `help.c` | Scrolls a built-in help text, any exit key returns to Normal |
+| `MODE_VISUAL` | `visual.c` | Text selection, cursor movement |
+| `MODE_EXPLORER`|`explorer_input.c`| Dir navigation, file mgmt (copy, cut, paste, rename, delete) |
 
 ---
 
@@ -570,9 +594,38 @@ OBJS    = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
 | `x` | Delete character under cursor |
 | `u` | Undo last change (up to 50 steps) |
 | `i` | Enter Insert mode |
+| `v` | Enter Visual mode |
+| `/` | Search forward for pattern |
+| `n` | Find next search match |
+| `N` | Find previous search match |
 | `:` | Enter Command mode |
-| `Enter` | (Explorer) Open selected file or folder |
 | `Ctrl-Q` | Quit (with unsaved-changes check) |
+| `Mouse Click` | Move cursor to clicked location |
+| `Scroll Wheel` | Scroll content up/down |
+
+### Visual Mode
+
+| Key | Action |
+|---|---|
+| `Esc / v / q` | Exit Visual mode without saving |
+| `h / j / k / l` | Move cursor (update selection) |
+| `x / d` | (WIP) Delete selected text |
+
+### Explorer Mode
+
+| Key | Action |
+|---|---|
+| `j / k` | Move cursor up/down |
+| `h / l` | Parent directory / Open folder |
+| `Enter / o` | Open selected file or folder |
+| `a / A` | Create new file / folder |
+| `r / d` | Rename / delete entry |
+| `y / x / p` | Copy / cut / paste file |
+| `/` | Search files |
+| `n / N` | Find next/previous search match |
+| `.` | Toggle hidden files |
+| `R` | Refresh directory |
+| `q / Esc` | Return to Normal mode |
 
 ### Insert Mode
 
@@ -593,3 +646,4 @@ OBJS    = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
 | `:q!` | Force quit |
 | `:wq` | Save and quit |
 | `:help` | Open Help screen |
+| `:Ex` | Open File Explorer |
