@@ -45,9 +45,11 @@ fi
 
 if [ -w "$INSTALL_DIR" ]; then
     cp "$SOURCE_BINARY" "$INSTALL_DIR/$BINARY_NAME"
+    ln -sf "$INSTALL_DIR/$BINARY_NAME" "$INSTALL_DIR/v"
 else
     echo "Permission denied. Attempting to install with sudo..."
     sudo cp "$SOURCE_BINARY" "$INSTALL_DIR/$BINARY_NAME"
+    sudo ln -sf "$INSTALL_DIR/$BINARY_NAME" "$INSTALL_DIR/v"
 fi
 
 if [ $? -eq 0 ]; then
@@ -56,7 +58,7 @@ if [ $? -eq 0 ]; then
     else
         sudo chmod +x "$INSTALL_DIR/$BINARY_NAME"
     fi
-    echo "Successfully installed $BINARY_NAME!"
+    echo "Successfully installed $BINARY_NAME (and 'v' alias)!"
     
     if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
         echo -e "\nWARNING: $INSTALL_DIR is not in your PATH."
@@ -70,7 +72,7 @@ if [ $? -eq 0 ]; then
              echo "  export PATH=\$PATH:$INSTALL_DIR"
         fi
     else
-        echo "You can now run it by typing '$BINARY_NAME' or '$BINARY_NAME .'"
+        echo "You can now run it by typing '$BINARY_NAME', 'v', or 'v .'"
     fi
 else
     echo "Error: Installation failed."

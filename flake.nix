@@ -34,6 +34,7 @@
             installPhase = ''
               mkdir -p $out/bin
               cp bin/vedit $out/bin/
+              ln -s $out/bin/vedit $out/bin/v
             '';
           };
           default = self.packages.${system}.vedit;
