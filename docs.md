@@ -1,6 +1,6 @@
 # vedit — Architecture & Developer Documentation
 
-> A modular, terminal-based Vim-like text editor written in C.
+> A modular, terminal-based text editor written in C.
 
 ---
 

@@ -1,4 +1,4 @@
-# Vedit - A Modular Vim-like Terminal Text Editor [WIP]
+# Vedit - A Modular Terminal Text Editor [WIP]
 
 Vedit is a lightweight, terminal-based text editor written entirely in C. It features a modular architecture, modal editing, and directory navigation, all powered by VT100 escape sequences without any external UI libraries.
 
